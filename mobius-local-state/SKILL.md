@@ -1,6 +1,6 @@
 ---
 name: mobius-local-state
-description: Read the local state of Mobius with no change. Use it to find the active tasks, the copied issues and Workstreams, the first prompt of a session, and the release of the running Mobius. Use it before you blame `main` for a behavior of the running Mobius.
+description: Read the local state of Mobius with no change. Use it to find the active tasks, the task of one issue and its states, the copied issues and Workstreams, the Inbox items, the Lead events, the pending actions, the first prompt of a session, and the release of the running Mobius. Use it before you blame `main` for a behavior of the running Mobius.
 ---
 
 # Local state of Mobius
@@ -19,16 +19,23 @@ sqlite3 -readonly ~/.mobius/mobius.db "select name from pragma_table_info('tasks
 
 These columns are the most useful:
 
-- `tasks`: `id`, `repository`, `workstream_repository`, `issue`, `workstream`, `state`, `state_at`, `branch`, `pull_request`, `review_rounds`, `fix_rounds`, `rerun_head`.
+- `tasks`: `id`, `repository`, `workstream_repository`, `issue`, `workstream`, `state`, `state_at`, `worker`, `branch`, `pull_request`, `review_rounds`, `fix_rounds`, `rerun_head`.
 - `copied_issues`: `repository`, `workstream`, `number`, `repository_url`, `title`, `body`, `state`.
 - `copied_workstreams`: `repository`, `number`, `title`, `body`, `autopilot`, `evergreen`.
 - `sessions`: `id`, `role`, `repository`, `issue`, `workstream`, `started_at`, `ended_at`, `end_reason`.
 - `transcript`: `id`, `session`, `time`, `kind`, `json`. The kind `prompt` has the prompt text in `$.text`.
+- `task_states`: `id`, `task`, `state`, `role`, `session`, `started_at`, `ended_at`. Each row is one state of a task.
+- `inbox_items`: `id`, `kind`, `repository`, `workstream_repository`, `workstream`, `issue`, `pull_request`, `time`, `dismissed_at`, `merging`, `merge_refusal`.
+- `lead_events`: `id`, `repository`, `workstream`, `issue_repository`, `issue`, `kind`, `payload`, `time`, `delivered_at`, `held`, `held_at`.
+- `events`: `id`, `time`, `repository`, `workstream`, `issue`, `actor`, `text`, `link`.
+- `pending_actions`: `id`, `repository`, `workstream`, `issue`, `role`, `tool`, `arguments`, `state`, `error`, `result`, `time`, `decided_at`.
 - `goose_db_version`: `version_id`, `tstamp`.
 
-The column of the pull request is `pull_request`, not `pr`.
+The column of the pull request is `pull_request`, not `pr`. When `state` is `working`, the column `worker` has the role of the Worker that runs on the task, for example `implementer` or `reviewer`. In each other state, `worker` keeps the role of the last Worker.
 
-In `tasks`, `repository` is the repository of the task issue, and `workstream_repository` is the repository of its Workstream. In `copied_issues`, `repository` is the repository of the Workstream copy, and `repository_url` is the API URL of the repository of the issue. One Workstream can have issues with the same number in two repositories.
+In `tasks`, `repository` is the repository of the task issue, and `workstream_repository` is the repository of its Workstream. In `copied_issues`, `repository` is the repository of the Workstream copy, and `repository_url` is the API URL of the repository of the issue. One Workstream can have issues with the same number in two repositories. In `lead_events`, `repository` is the repository of the Workstream, and `issue_repository` is the repository of the issue.
+
+The times are RFC 3339 text in UTC, and the fraction of the seconds has a variable length, for example `2026-10-22T22:45:49.88685Z`. Thus a text compare gives the correct order only for times in different seconds. Give each bound of a time window with no fraction, for example `2026-10-22T22:00:00Z`.
 
 ## Queries
 
@@ -36,6 +43,24 @@ Active tasks:
 
 ```sh
 sqlite3 -readonly ~/.mobius/mobius.db "select id, repository, issue, workstream_repository, workstream, state, pull_request, branch, review_rounds, fix_rounds from tasks where state <> 'ended' order by id"
+```
+
+Newest task of one issue. Always filter on `repository`, because two repositories can have an issue with the same number:
+
+```sh
+sqlite3 -readonly ~/.mobius/mobius.db "select id, state, state_at, worker, pull_request, fix_rounds, review_rounds from tasks where repository = '<owner>/<repo>' and issue = <number> order by id desc limit 1"
+```
+
+States of a task, newest first. Find the task id with the query above:
+
+```sh
+sqlite3 -readonly -header ~/.mobius/mobius.db "select state, role, session, started_at, ended_at from task_states where task = <id> order by id desc"
+```
+
+Lead events of a time window:
+
+```sh
+sqlite3 -readonly -header ~/.mobius/mobius.db "select id, repository, workstream, issue_repository, issue, kind, time, delivered_at, held_at, replace(substr(payload, 1, 200), char(10), ' ') from lead_events where time between '<from>' and '<to>' order by id"
 ```
 
 Open issues of one Workstream:
