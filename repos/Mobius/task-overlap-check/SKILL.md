@@ -1,6 +1,8 @@
 ---
 name: task-overlap-check
 description: Find the work that a new task can collide with, before you write the task issue. Use it to choose a free migration version, and to find the open pull requests and the live task branches that change the same files.
+metadata:
+  roles: lead
 ---
 
 # Overlap check for a new task
