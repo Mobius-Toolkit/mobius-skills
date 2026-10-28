@@ -1,6 +1,6 @@
 ---
 name: mobius-local-state
-description: Read the local state of Mobius with no change. Use it to find the active tasks, the task of one issue and its states, the copied issues and Workstreams, the Inbox items, the Lead events, the pending actions, the first prompt of a session, and the release of the running Mobius. Use it before you blame `main` for a behavior of the running Mobius.
+description: Read the local state of Mobius with no change. Use it to find the active tasks, the task of one issue and its states, the copied issues and Workstreams, the Inbox items, the Lead events, the pending actions, the first prompt of a session, the release of the running Mobius, and the first release that has a merged pull request. Use it before you blame `main` for a behavior of the running Mobius.
 ---
 
 # Local state of Mobius
@@ -102,3 +102,14 @@ The running Mobius can be older than `main`. Do these steps before you blame `ma
    ```sh
    gh api repos/Mobius-Toolkit/Mobius/compare/<tag>...<commit> --jq .status
    ```
+
+4. Find the first release that has a merged pull request. Compare that tag with the tag of step 1.
+
+   ```sh
+   R=~/.mobius/repos/Mobius-Toolkit/Mobius.git
+   git -C $R fetch -q origin --tags
+   c=$(gh pr view <n> -R Mobius-Toolkit/Mobius --json mergeCommit --jq .mergeCommit.oid)
+   test -n "$c" && git -C $R tag --contains "$c" | sort -V | head -1
+   ```
+
+   An empty result tells that the pull request is not merged, or that no release has it yet. The `test` is necessary: with no commit, `git tag --contains` reads the old local `HEAD` of the bare clone.
