@@ -1,13 +1,13 @@
 ---
 name: task-overlap-check
-description: Find the work that a new task can collide with, before you write the task issue. Use it to choose a free migration version, and to find the open pull requests and the live task branches that change the same files.
+description: Find the work that a new task can collide with, before you write the task issue or the proposal of a task. Use it to choose a free migration version, and to find the open pull requests and the live task branches that change the same files.
 metadata:
-  roles: lead
+  roles: lead,researcher
 ---
 
 # Overlap check for a new task
 
-Do this check before you write a task issue that adds a migration or changes shared files. Two tasks with the same migration version, or with changes to the same lines, cause a conflict at the merge.
+Do this check before you write a task issue or the proposal of a task that adds a migration or changes shared files. Two tasks with the same migration version, or with changes to the same lines, cause a conflict at the merge.
 
 Mobius keeps a bare clone of each repository at `~/.mobius/repos/<owner>/<repo>.git`. The branch of a task has the name `mobius/<issue>` or `mobius/<issue>-<n>`. A branch can have commits before its pull request opens, and GitHub deletes the branch of a merged pull request. Mobius merges with a squash, so a merged branch is not an ancestor of `main`.
 
@@ -31,7 +31,7 @@ In Mobius-Toolkit/Mobius, the migrations are in `internal/store/migrations/`. Th
    gh issue list -R <owner>/<repo> --state open --limit 200 --json number,title,body | jq -r '.[] | (.body | [scan("20[0-9]{12}")] | unique | join(",")) as $v | select($v != "") | "\(.number) [\($v)] \(.title)"'
    ```
 
-3. Choose one exact version that is greater than each version of steps 1 and 2. Write this version in the task issue. Do not write a range or "this version or higher".
+3. Choose one exact version that is greater than each version of steps 1 and 2. Write this version in the task issue or in the proposal. Do not write a range or "this version or higher".
 
 ## Open pull requests that change the same files
 
@@ -53,4 +53,4 @@ sqlite3 -readonly ~/.mobius/mobius.db "select branch from tasks where state <> '
 
 ## Result
 
-When an open pull request or a live task branch changes the same code, name its issue in the Limits of the new task issue, and tell the Owner. When the new task needs that work, also add its issue as a blocker.
+When an open pull request or a live task branch changes the same code, name its issue in the Limits of the new task issue, or in the proposal. A Lead also tells the Owner. When the new task needs that work, also add its issue as a blocker.
