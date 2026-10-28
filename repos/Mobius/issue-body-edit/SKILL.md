@@ -18,23 +18,27 @@ Do not type the full body again. A full new body can lose text that you did not 
    echo "$d"
    ```
 
-2. Replace each old text with its new text. The script stops when an old text does not occur exactly one time. Then nothing changes. Use a triple-quoted string for a text with a line break or a quote.
+2. Replace each old text with its new text. The script stops when an old text does not occur exactly one time. Then nothing changes.
 
    ```sh
    python3 -I - "$d/b.md" <<'EOF'
    import sys
    p = sys.argv[1]
-   s = open(p).read()
+   s = open(p, newline="").read()
    reps = [
-       ("<old text 1>", "<new text 1>"),
-       ("<old text 2>", "<new text 2>"),
+       (r"""<old text 1>""", r"""<new text 1>"""),
+       (r"""<old text 2>""", r"""<new text 2>"""),
    ]
    for a, b in reps:
        assert s.count(a) == 1, a[:60]
        s = s.replace(a, b)
-   open(p, "w").write(s)
+   open(p, "w", newline="").write(s)
    EOF
    ```
+
+   - The raw strings `r"""…"""` keep each backslash, for example `\|` in a table. Do not remove the `r`: with no `r`, Python writes a line break in place of `\n`.
+   - `newline=""` keeps the line ends of the body. A body that the GitHub web page changed can have `\r\n` line ends.
+   - A text can hold line breaks and quotes. A text cannot end with `"` or `\`. Then add the next character of the body to the end of the old text and of the new text.
 
 3. Read the difference. Make sure that it has only the changes that you want:
 
