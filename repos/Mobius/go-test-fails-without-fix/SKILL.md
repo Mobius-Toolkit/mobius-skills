@@ -16,11 +16,14 @@ WARNING: Do not use `git stash` for this check. All worktrees of the bare clone 
 2. Set the values:
    - `<files>`: the source files of the fix, with no `_test.go` file. Do not give a test helper that the new test needs.
    - `<package>` and `<names>`: the package and the names of the new tests.
+   - `<base>`: the commit before the fix.
+     - In the first round of a task, use `$(git merge-base HEAD origin/main)`.
+     - In a fix round, use `origin/$(git branch --show-current)`. It is the head that Mobius pushed before the round, so it has the changes of the earlier rounds. The base of the branch also removes these changes, and then the new test can fail for a different cause, for example a compile error.
 
 3. Remove the fix, run the new tests, and put the fix back, in one Bash call:
 
    ```sh
-   b=$(git merge-base HEAD origin/main)
+   b=<base>
    git diff $b HEAD -- <files> | git apply -R && go test ./<package> -run '<names>' 2>&1 | tail -15
    git checkout HEAD -- <files> && git status --short
    ```
