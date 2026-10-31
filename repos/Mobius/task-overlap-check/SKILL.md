@@ -1,6 +1,6 @@
 ---
 name: task-overlap-check
-description: Find the work that a new task can collide with, before you write the task issue or the proposal of a task. Use it to choose a free migration version, and to find the open pull requests and the live task branches that change the same files.
+description: Find the work that a new task can collide with, before you write the task issue or the proposal of a task. Use it to choose a free migration version, and to find the open issues, the open pull requests and the live task branches that change the same files.
 metadata:
   roles: lead,researcher
 ---
@@ -33,6 +33,16 @@ In Mobius-Toolkit/Mobius, the migrations are in `internal/store/migrations/`. Th
 
 3. Choose one exact version that is greater than each version of steps 1 and 2. Write this version in the task issue or in the proposal. Do not write a range or "this version or higher".
 
+## Open issues that name the same files
+
+An open task issue that has not started yet has no branch and no pull request. Its body names the files and the functions that it changes. Set `<names>` to a regular expression of the files and the identifiers of the new task, for example `runner\\.go|implementer\\.go|closeHarness`.
+
+```sh
+gh issue list -R <owner>/<repo> --state open --limit 200 --json number,title,body --jq '.[] | select(.body // "" | test("<names>")) | "\(.number) \(.title)"'
+```
+
+The result also has the Workstream issues that name the same files. Read the body of each task issue in the result.
+
 ## Open pull requests that change the same files
 
 Set `<paths>` to a regular expression of the files of the new task, for example `web/src/Chat.tsx|internal/engine/copy.go`.
@@ -53,4 +63,4 @@ sqlite3 -readonly ~/.mobius/mobius.db "select branch from tasks where state <> '
 
 ## Result
 
-When an open pull request or a live task branch changes the same code, name its issue in the Limits of the new task issue, or in the proposal. A Lead also tells the Owner. When the new task needs that work, also add its issue as a blocker.
+When an open issue, an open pull request or a live task branch changes the same code, name its issue in the Limits of the new task issue, or in the proposal. A Lead also tells the Owner. When the new task needs that work, also add its issue as a blocker.
