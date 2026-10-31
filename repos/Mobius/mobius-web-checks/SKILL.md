@@ -1,6 +1,6 @@
 ---
 name: mobius-web-checks
-description: Check a change of the web app of Mobius-Toolkit/Mobius. Use it to run one Playwright e2e test in the foreground and read why it failed. Also use it to run a pure TypeScript module of `web/src/lib` with Node, with no test runner.
+description: Run `pnpm e2e` for one spec or one test of the web app of Mobius-Toolkit/Mobius in the foreground, and read why a test failed. Also run a pure TypeScript module of `web/src/lib` with Node, with no test runner. Use it before each `pnpm e2e` or `playwright test` run, and before a check of a function of `web/src/lib`.
 metadata:
   roles: implementer
 ---
