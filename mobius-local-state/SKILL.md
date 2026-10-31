@@ -1,6 +1,8 @@
 ---
 name: mobius-local-state
-description: Read the local state of Mobius with no change. Use it to find the active tasks, the task of one issue and its states, the copied issues and Workstreams, the Inbox items, the Lead events, the pending actions, the first prompt of a session, the release of the running Mobius, and the first release that has a merged pull request. Use it before you blame `main` for a behavior of the running Mobius.
+description: Read the local state of Mobius with no change. Use it to find the active tasks, the task of one issue and its states, the cost of the agent turns, the copied issues and Workstreams, the Inbox items, the Lead events, the pending actions, the first prompt of a session, the release of the running Mobius, and the first release that has a merged pull request. Use it before you blame `main` for a behavior of the running Mobius.
+metadata:
+  roles: lead,coordinator,curator,researcher
 ---
 
 # Local state of Mobius
@@ -29,9 +31,12 @@ These columns are the most useful:
 - `lead_events`: `id`, `repository`, `workstream`, `issue_repository`, `issue`, `kind`, `payload`, `time`, `delivered_at`, `held`, `held_at`.
 - `events`: `id`, `time`, `repository`, `workstream`, `issue`, `actor`, `text`, `link`.
 - `pending_actions`: `id`, `repository`, `workstream`, `issue`, `role`, `tool`, `arguments`, `state`, `error`, `result`, `time`, `decided_at`.
+- `turn_usage`: `id`, `session`, `task`, `issue`, `workstream`, `repository`, `role`, `harness`, `model`, `effort`, `started_at`, `ended_at`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_write_tokens`, `cost_usd`. Each row is one agent turn.
 - `goose_db_version`: `version_id`, `tstamp`.
 
 The column of the pull request is `pull_request`, not `pr`. When `state` is `working`, the column `worker` has the role of the Worker that runs on the task, for example `implementer` or `reviewer`. In each other state, `worker` keeps the role of the last Worker.
+
+The role of the Lead in `sessions` and `turn_usage` is `lead_chat`, not `lead`. The other roles have their lower-case name, for example `implementer` or `reviewer`.
 
 In `tasks`, `repository` is the repository of the task issue, and `workstream_repository` is the repository of its Workstream. In `copied_issues`, `repository` is the repository of the Workstream copy, and `repository_url` is the API URL of the repository of the issue. One Workstream can have issues with the same number in two repositories. In `lead_events`, `repository` is the repository of the Workstream, and `issue_repository` is the repository of the issue.
 
@@ -73,6 +78,12 @@ Brief of a Workstream:
 
 ```sh
 sqlite3 -readonly ~/.mobius/mobius.db "select number, title, autopilot, evergreen, body from copied_workstreams where repository = '<owner>/<repo>' and number = <number>"
+```
+
+Turns and cost of one role for each UTC day:
+
+```sh
+sqlite3 -readonly ~/.mobius/mobius.db "select date(started_at) d, count(*), round(sum(cost_usd), 2) from turn_usage where role = '<role>' and started_at >= '<day>' group by d"
 ```
 
 First prompt of a session:
