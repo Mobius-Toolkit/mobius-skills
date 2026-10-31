@@ -1,6 +1,6 @@
 ---
 name: bare-clone-read
-description: Read the files of `main` or of an open pull request from the bare clone of Mobius, with no worktree and no checkout. Use it when you have no worktree of the repository, or when your worktree is not at the newest `main`.
+description: Read the files of `main` or of an open pull request from the bare clone of Mobius, with no worktree and no checkout, and the diff of a pull request with no generated files. Use it when you have no worktree of the repository, when your worktree is not at the newest `main`, or at the review of a pull request.
 metadata:
   roles: lead
 ---
@@ -79,3 +79,26 @@ git -C $R log --format='%h %cI %s' refs/remotes/pr/<n>..origin/main
 ```
 
 Fetch the ref again after a new push to the pull request. The old ref keeps the old head.
+
+## Diff of a pull request with no generated files
+
+In Mobius-Toolkit/Mobius, `make generate` writes these files. Do not review them line by line.
+
+| Generated file | Source |
+| --- | --- |
+| `internal/store/db.go`, `internal/store/models.go`, `internal/store/*.sql.go` | `internal/store/queries.sql` and `internal/store/migrations/` (sqlc) |
+| `api/openapi.json` | the handlers in `internal/api` |
+| `web/src/api/api.gen.ts` | `api/openapi.json` (orval) |
+
+`.mobius/check` runs `make generate` and fails when a generated file is not current. Thus a head that passed the check has current generated files.
+
+Fetch the ref of the pull request as above. Then read the diff of the source files with no generated files and no tests, and then the diff of the tests:
+
+```sh
+git -C $R diff origin/main...refs/remotes/pr/<n> -- . ':!internal/store/db.go' ':!internal/store/models.go' ':!internal/store/*.sql.go' ':!api/openapi.json' ':!web/src/api/api.gen.ts' ':!*_test.go' ':!web/e2e'
+git -C $R diff origin/main...refs/remotes/pr/<n> -- '*_test.go' web/e2e
+```
+
+When the output is too long, give the directories one at a time, for example `-- internal/engine ':!*_test.go'`.
+
+To read only the commits after a head that you read before, put `<old head> refs/remotes/pr/<n>` in place of `origin/main...refs/remotes/pr/<n>`.
