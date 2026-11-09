@@ -88,14 +88,14 @@ In Mobius-Toolkit/Mobius, `make generate` writes these files. Do not review them
 | --- | --- |
 | `internal/store/db.go`, `internal/store/models.go`, `internal/store/*.sql.go` | `internal/store/queries.sql` and `internal/store/migrations/` (sqlc) |
 | `api/openapi.json` | the handlers in `internal/api` |
-| `web/src/api/api.gen.ts` | `api/openapi.json` (orval) |
+| `web/src/api/api.gen.ts`, `web/src/api/schemas.gen.ts` | `api/openapi.json` (orval) |
 
 `.mobius/check` runs `make generate` and fails when a generated file is not current. Thus a head that passed the check has current generated files.
 
 Fetch the ref of the pull request as above. Then read the diff of the source files with no generated files and no tests, and then the diff of the tests:
 
 ```sh
-git -C $R diff origin/main...refs/remotes/pr/<n> -- . ':!internal/store/db.go' ':!internal/store/models.go' ':!internal/store/*.sql.go' ':!api/openapi.json' ':!web/src/api/api.gen.ts' ':!*_test.go' ':!web/e2e'
+git -C $R diff origin/main...refs/remotes/pr/<n> -- . ':!internal/store/db.go' ':!internal/store/models.go' ':!internal/store/*.sql.go' ':!api/openapi.json' ':!web/src/api/*.gen.ts' ':!*_test.go' ':!web/e2e'
 git -C $R diff origin/main...refs/remotes/pr/<n> -- '*_test.go' web/e2e
 ```
 
