@@ -16,10 +16,10 @@ The script `bun run e2e` builds the UI and then runs `bunx --bun playwright test
 The projects in `playwright.config.ts` form four groups: `screenshots`, `a`, `b` and `c`. Each group has its own server. With no `MOBIUS_E2E_GROUP`, the run starts all four servers. Set `MOBIUS_E2E_GROUP` to the group of the spec, so that only its server starts:
 
 ```sh
-grep -n '"<spec>.spec.ts"' playwright.config.ts
+grep -n -B2 '"<spec>.spec.ts"' playwright.config.ts
 ```
 
-The line starts with `groupA`, `groupB` or `groupC`. The spec `screenshots.spec.ts` is in the group `screenshots`.
+The match, or one of the two lines above it, starts with `groupA(`, `groupB(` or `groupC(`. A project can take more than one line, so the `testMatch` line alone does not always show the group. The spec `screenshots.spec.ts` is in the group `screenshots`.
 
 The projects have dependencies. A project runs only after its dependency projects, because it needs their data. Thus one spec file also runs the full chain of its dependency projects. A run of `e2e/actions.spec.ts` takes about 5 minutes.
 
