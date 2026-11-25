@@ -10,10 +10,11 @@ metadata:
 The workflow `Screenshots` keeps the images on the branch `screenshots` of Mobius-Toolkit/Mobius. The folder `main/` has the images of the last Release run of `main` with the artifact `screenshots`. The folder `pr-<n>/` has the images of the newest head of pull request `<n>`. The workflow writes a section between `<!-- screenshots -->` and `<!-- /screenshots -->` in the pull request body:
 
 - a table with one row for each screen that is `added`, `changed` or `removed`. The image links point to one commit of the branch `screenshots`.
+- "Screens that the table does not show: <count>." below the table, when the pull request body is too long for all rows. The folder `pr-<n>/` has the images of these screens. The download below does not get them.
 - "No screen changed." when each image is the same as the image of `main`.
 - "The screenshots are pending." or "The screenshots failed." when the images of the head are not ready.
 
-The image of `main` comes from the newest `main`, not from the base of the pull request. Thus a screen can show as `changed` because of a newer commit on `main`. Before you blame the pull request, read the commits of `main` after the merge base.
+The image of `main` can be older than the newest `main`, and it does not come from the base of the pull request. CI tests the merge of the pull request with `main`. Thus a screen can show as `changed` because of a different merged pull request. Before you blame the pull request, read the newest commits of `main`, also the commits right before the merge base.
 
 Each Bash call has a new shell. Run the commands of one section in one Bash call, or set `P` and `D` again.
 
@@ -24,6 +25,7 @@ P=<pull request>
 D=$(mktemp -d)
 gh pr view $P -R Mobius-Toolkit/Mobius --json body --jq .body | sed -n '/<!-- screenshots -->/,/<!-- \/screenshots -->/p' > $D/section.md
 grep -oE '`[a-z0-9-]+` \| (added|changed|removed)' $D/section.md
+grep -oE 'Screens that the table does not show: [0-9]+' $D/section.md
 grep -oE 'https://raw\.githubusercontent\.com/[^"]+\.png' $D/section.md | while read u; do curl -sfL -o "$D/$(echo "$u" | awk -F/ '{print $(NF-1)"_"$NF}')" "$u"; done
 echo $D; ls $D
 ```
