@@ -1,6 +1,6 @@
 ---
 name: mobius-local-state
-description: Read the local state of Mobius with no change. Use it to find the active tasks, the task of one issue and its states, the cost of the agent turns, the copied issues and Workstreams, the Inbox items, the Lead events, the pending actions, the first prompt of a session, the release of the running Mobius, and the first release that has a merged pull request. Use it before you blame `main` for a behavior of the running Mobius.
+description: Read the local state of Mobius with no change. Use it to find the active tasks, the task of one issue and its states, the cost of the agent turns, the copied issues and Workstreams, the Inbox items, the Lead events, the pending actions, the first prompt of a session, the release of the running Mobius, the first release that has a merged pull request, and the server log with the poll errors of one repository. Use it before you blame `main` for a behavior of the running Mobius.
 metadata:
   roles: lead,coordinator,curator,researcher
 ---
@@ -90,6 +90,26 @@ First prompt of a session:
 
 ```sh
 sqlite3 -readonly ~/.mobius/mobius.db "select json_extract(json, '$.text') from transcript where session = <id> and kind = 'prompt' order by id limit 1"
+```
+
+## Server log
+
+The running Mobius writes its log to stderr and to `<data_dir>/logs/mobius.log`. The default `data_dir` is `~/.mobius`. At 10 MB, Mobius renames the file to `mobius-<UTC time>.log` and starts a new `mobius.log`. It keeps 14 old files and deletes the oldest file. A release before pull request #2102 writes no log file.
+
+The time at the start of each line uses the local time zone of the machine of Mobius, not UTC. On the machine of Mobius, this zone is Central European time (CET or CEST).
+
+The glob `mobius*.log` sorts the old files first and `mobius.log` last, so the lines stay in time order.
+
+Each poll of a repository writes the line `poll <owner>/<repo>: <duration>`. A failed poll writes one more line `poll <owner>/<repo>: <error>`. Show only the poll errors of one repository:
+
+```sh
+grep -h 'poll <owner>/<repo>: ' ~/.mobius/logs/mobius*.log | grep -vE ': ([0-9]+m)?[0-9.]+(ms|s)$'
+```
+
+Show the last lines of the log:
+
+```sh
+tail -n 200 ~/.mobius/logs/mobius.log
 ```
 
 ## Release of the running Mobius
