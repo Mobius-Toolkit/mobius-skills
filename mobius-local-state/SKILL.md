@@ -2,7 +2,7 @@
 name: mobius-local-state
 description: Read the local state of Mobius with no change. Use it to find the active tasks, the task of one issue and its states, the cost of the agent turns, the issues and Workstreams, the Inbox items, the Lead events, the pending actions, the first prompt of a session, the release of the running Mobius, the first release that has a merged pull request, and the server log with the poll errors of one repository. Use it before you blame `main` for a behavior of the running Mobius.
 metadata:
-  roles: lead,coordinator,curator,researcher
+  roles: lead,coordinator
 ---
 
 # Local state of Mobius
