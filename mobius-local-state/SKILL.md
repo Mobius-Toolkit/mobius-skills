@@ -1,6 +1,6 @@
 ---
 name: mobius-local-state
-description: Read the local state of Mobius with no change. Use it to find the active tasks, the task of one issue and its states, the cost of the agent turns, the issues and Workstreams, the Inbox items, the Lead events, the pending actions, the first prompt of a session, the release of the running Mobius, the first release that has a merged pull request, and the server log with the poll errors of one repository. Use it before you blame `main` for a behavior of the running Mobius.
+description: Read the local state of Mobius with no change. Use it to find the active tasks, the task of one issue and its states, the cost of the agent turns, the usage limit windows of Claude Code, the issues and Workstreams, the Inbox items, the Lead events, the pending actions, the first prompt of a session, the release of the running Mobius, the first release that has a merged pull request, and the server log with the poll errors of one repository. Use it before you blame `main` for a behavior of the running Mobius.
 metadata:
   roles: lead,coordinator
 ---
@@ -83,6 +83,15 @@ Turns and cost of one role for each UTC day:
 
 ```sh
 sqlite3 -readonly ~/.mobius/mobius.db "select date(started_at) d, count(*), round(sum(cost_usd), 2) from turn_usage where role = '<role>' and started_at >= '<day>' group by d"
+```
+
+Windows of the 5-hour usage limit of Claude Code. `s` is the start of the window, and `top` is the highest usage that Claude reported in the window (1 is the limit). `top_at` is the time of the first report of `top`. `usd` is the cost that Mobius recorded in the window. Mobius records the cost of a turn at its end, so a turn that still runs is not in `usd`. `top` can also include usage of the account outside Mobius:
+
+```sh
+sqlite3 -readonly -header -column ~/.mobius/mobius.db "
+with u as (select strftime('%Y-%m-%dT%H:%M:%SZ', time) time, json_extract(json,'\$.update._meta.\"_claude/rateLimit\".unifiedWindows.five_hour.resetsAt') r, json_extract(json,'\$.update._meta.\"_claude/rateLimit\".unifiedWindows.five_hour.utilization') p from transcript where kind = 'update' and json like '%unifiedWindows%' and time >= '<day>T00:00:00Z'),
+w as (select r, strftime('%Y-%m-%dT%H:%M:%SZ', r - 18000, 'unixepoch') s, strftime('%Y-%m-%dT%H:%M:%SZ', r, 'unixepoch') e, max(p) top from u where time < strftime('%Y-%m-%dT%H:%M:%SZ', r, 'unixepoch') group by r)
+select s, top, (select min(time) from u where u.r = w.r and u.p = w.top) top_at, (select round(sum(cost_usd), 1) from turn_usage where harness = 'claude-code' and ended_at between w.s and w.e) usd from w order by s desc"
 ```
 
 First prompt of a session:
